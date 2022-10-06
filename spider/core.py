@@ -16,6 +16,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from spider.common import retry
 from spider.exceptions import StopSpiderException
+from spider.providers import ProvidersChain
 from spider.task import Task
 
 # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -27,8 +28,8 @@ class SeleniumSpider:
 
     def __init__(self, driver_class=webdriver.Chrome, options=None):
         self.__driver = driver_class
-        self.__options = options or Options
-        self.__stack = []
+        self.__options = options or Options()
+        self.__task_providers_chain: ProvidersChain = ProvidersChain(self.task_generator())
 
     def prepare(self, driver):
         pass
@@ -37,7 +38,7 @@ class SeleniumSpider:
     def __configure_wait(driver: WebDriver):
         return WebDriverWait(driver, 30)
 
-    def task_generator(self):
+    def task_generator(self) -> types.GeneratorType:
         yield
 
     def run(self):
@@ -48,16 +49,23 @@ class SeleniumSpider:
 
     def __process_cycle(self, wait: WebDriverWait, driver: WebDriver):
         try:
-            for task in self.task_generator():
-                next_task_generator = self.__process_task(driver, wait, task)
-                self.__stack.append(next_task_generator)
-                self.__process_subtasks(wait, driver)
+            for task in self.__task_providers_chain.items():
+                next_task_provider = self.__process_task(driver, wait, task)
+                self.__handle_next_task_provider(driver, next_task_provider)
         except StopSpiderException as ex:
             LOGGER.info("Spider stopped on StopSpiderException")
         except KeyboardInterrupt as ex:
             LOGGER.info("Spider stopped on KeyboardInterrupt")
 
+    def __handle_next_task_provider(self, driver, task_provider):
+        if isinstance(task_provider, types.GeneratorType):
+            self.__task_providers_chain.add_provider(task_provider)
+        else:
+            self.__close_tab(driver)
+
     def __process_task(self, driver: WebDriver, wait: WebDriverWait, task: Task):
+        if not task:
+            return
         try:
             task_result = self.__request(driver, wait, task)
             task_result_handler = getattr(self, f"task_{task.name}")
@@ -67,64 +75,43 @@ class SeleniumSpider:
         except Exception as ex:
             LOGGER.warning(ex)
 
-    def __process_subtasks(self, wait: WebDriverWait, driver: WebDriver):
-        def default_generator():
-            yield None
-
-        while len(self.__stack) > 0:
-            current_generator = self.__stack[-1] or default_generator()
-            try:
-                if not (task := next(current_generator, False)):
-                    raise Exception
-            except Exception as ex:
-                LOGGER.warning(ex)
-                self.__close_tab(driver)
-                self.__stack.pop()
-                gc.collect()
-                continue
-
-            following = self.__process_task(driver, wait, task)
-            if isinstance(following, types.GeneratorType):
-                self.__stack.append(following)
-                self.__clean_stack(driver)
-            else:
-                self.__close_tab(driver)
-
-    def __clean_stack(self, driver: WebDriver):
-        if len(driver.window_handles) < len(self.__stack):
-            del self.__stack[0]
-            gc.collect()
-
     @staticmethod
     def __close_tab(driver: WebDriver):
         if len(driver.window_handles) > 1: driver.close()
         driver.switch_to.window(driver.window_handles[-1])
+        gc.collect()
 
     @staticmethod
     def __request(driver: WebDriver, wait: WebDriverWait, task: Task):
-        SeleniumSpider.__sleep_handler(driver, wait, task)
-        SeleniumSpider.__target_handler(driver, wait, task)
-        SeleniumSpider.__wait_handler(driver, wait, task)
+        SeleniumSpider.__handle_sleep(driver, wait, task)
+        SeleniumSpider.__process_request(driver, wait, task)
+        SeleniumSpider.__handle_wait(driver, wait, task)
         return driver.page_source
 
     @staticmethod
-    def __sleep_handler(driver: WebDriver, wait: WebDriverWait, task: Task):
-        if hasattr(task, "sleep"):
-            time.sleep(getattr(task, "sleep", 0))
+    def __handle_sleep(driver: WebDriver, wait: WebDriverWait, task: Task):
+        if task.sleep > 0:
+            time.sleep(task.sleep)
 
     @staticmethod
-    def __target_handler(driver: WebDriver, wait: WebDriverWait, task: Task):
-        if hasattr(task, "url"):
-            if getattr(task, "new_tab", False):
+    def __process_request(driver: WebDriver, wait: WebDriverWait, task: Task):
+        target_handlers = [handler for name, handler in SeleniumSpider.__dict__.items()
+                           if "_target_handler" in name]
+        for handler in target_handlers:
+            handler.__func__(driver, wait, task)
+
+    @staticmethod
+    def __url_target_handler(driver: WebDriver, wait: WebDriverWait, task: Task):
+        if task.url:
+            if getattr(task, "_new_tab"):
                 driver.execute_script('''window.open("about:blank");''')
                 driver.switch_to.window(driver.window_handles[-1])
             driver.get(task.url)
-        elif hasattr(task, "xpath"):
+
+    @staticmethod
+    def __xpath_target_handler(driver: WebDriver, wait: WebDriverWait, task: Task):
+        if task.xpath:
             retry(3, SeleniumSpider.__click_by_xpath,
-                  lambda: driver.refresh(),
-                  driver, wait, task)
-        elif hasattr(task, "css"):
-            retry(3, SeleniumSpider.__click_by_css,
                   lambda: driver.refresh(),
                   driver, wait, task)
 
@@ -139,6 +126,13 @@ class SeleniumSpider:
         driver.switch_to.window(driver.window_handles[-1])
 
     @staticmethod
+    def __cssquery_target_handler(driver: WebDriver, wait: WebDriverWait, task: Task):
+        if task.css:
+            retry(3, SeleniumSpider.__click_by_css,
+                  lambda: driver.refresh(),
+                  driver, wait, task)
+
+    @staticmethod
     def __click_by_css(driver: WebDriver, wait: WebDriverWait, task: Task):
         el = driver.find_element_by_css_selector(task.css)
         ActionChains(driver).move_to_element(el).perform()
@@ -149,6 +143,6 @@ class SeleniumSpider:
         driver.switch_to.window(driver.window_handles[-1])
 
     @staticmethod
-    def __wait_handler(driver: WebDriver, wait: WebDriverWait, task: Task):
-        if hasattr(task, "wait"):
+    def __handle_wait(driver: WebDriver, wait: WebDriverWait, task: Task):
+        if task.wait:
             wait.until(task.wait)

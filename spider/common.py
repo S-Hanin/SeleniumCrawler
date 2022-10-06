@@ -1,8 +1,11 @@
 # -*- coding: utf8 -*-
+import logging
+
 from selenium.common.exceptions import ElementClickInterceptedException
 
 from spider.exceptions import StopSpiderException
-from spider.spider import LOGGER
+
+logger = logging.getLogger(__name__)
 
 
 def retry(count, function, callback, *args, **kwargs):
@@ -11,8 +14,8 @@ def retry(count, function, callback, *args, **kwargs):
             function(*args, **kwargs)
             return
         except ElementClickInterceptedException as err:
-            LOGGER.warning(f"Attemp {_} of {count} failed: {err}")
+            logger.warning(f"Attemp {_} of {count} failed: {err}")
             callback()
     else:
-        LOGGER.critical("Retry failed")
+        logger.critical("Retry failed")
         raise StopSpiderException("Element click was intercepted")
