@@ -13,8 +13,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 class SimpleSpider(SeleniumSpider):
-    def __init__(self):
-        super().__init__()
 
     def task_generator(self) -> types.GeneratorType:
         yield Task(name="articles") \
