@@ -4,7 +4,14 @@
 
 That's a wrapper for selenium web driver which aims to simplify getting information  
 from web resources in case they use javascript to build the page or block using  
-simple http libs like 'requests'
+simple http libs like 'requests'.
+
+There's no such things like multiprocessing or multithreading, just one browser instance,  
+all works synchronously, that's not so trendy though.
+
+### Precautions
+
+Although I use this lib quite a long time it's still a homemade thing, so use it at your own risk.
 
 ### Using
 
@@ -16,6 +23,7 @@ For sure the 'must have' knowledge is how selenium works, at least this knowledg
 import types
 from pyquery import PyQuery
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.chrome.options import Options
 
 from spider.core import SeleniumSpider
 from spider.task import Task
@@ -32,10 +40,18 @@ class SimpleSpider(SeleniumSpider):
         .add_wait(lambda d: d.find_element_by_xpath("//div[@data-test-id='page-top']"))
 
 
-def task_articles(self, driver: WebDriver, pq: PyQuery, task: Task):
-    pq.make_links_absolute("https://habr.com/ru/all/")
-    for it in pq.items('article'):
-        print(it.children('div>h2').text(), end="")
+    def task_articles(self, driver: WebDriver, pq: PyQuery, task: Task):
+       pq.make_links_absolute("https://habr.com/ru/all/")
+       for it in pq.items('article'):
+           print(it.children('div>h2').text(), end="")
+
+
+if __name__ == 'main':
+    options = Options()
+    options.headless = True
+    worker = SimpleSpider(options=options)
+    worker.run()
+
 ```
 
 `def prepare(self, driver)` - this method is executed before the process begins.  
@@ -59,7 +75,7 @@ Note that handler's name is `task_articles` and name of the task is `articles`, 
 
 It's possible to set up `Task` different ways:
 
-* use url - selenium opens specified method
+* use url - selenium opens specified address
 * use xpath selector - selenium finds element on the page and clicks it
 * use css selector - selenium finds element on the page and clicks it
 
