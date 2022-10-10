@@ -37,9 +37,9 @@ class SimpleSpider(SeleniumSpider):
         pass
 
     def task_generator(self) -> types.GeneratorType:
-        yield Task(name="articles")
-        .add_url("https://habr.com/ru/all/")
-        .add_wait(lambda d: d.find_element_by_xpath("//div[@data-test-id='page-top']"))
+        yield (Task(name="articles")
+            .add_url("https://habr.com/ru/all/")
+            .add_wait(lambda d: d.find_element_by_xpath("//div[@data-test-id='page-top']")))
 
     def task_articles(self, driver: WebDriver, pq: PyQuery, task: Task):
        pq.make_links_absolute("https://habr.com/ru/all/")
