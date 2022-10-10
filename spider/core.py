@@ -147,6 +147,18 @@ class SeleniumSpider:
         driver.switch_to.window(driver.window_handles[-1])
 
     @staticmethod
+    def __javascript_target_handler(driver: WebDriver, wait: WebDriverWait, task: Task) -> None:
+        if task.script:
+            retry(3, SeleniumSpider.__exec_javascript,
+                  lambda: driver.refresh(),
+                  driver, wait, task)
+
+    @staticmethod
+    def __exec_javascript(driver: WebDriver, wait: WebDriverWait, task: Task) -> None:
+        driver.execute_script(task.script, *task.script_args)
+        driver.switch_to.window(driver.window_handles[-1])
+
+    @staticmethod
     def __handle_wait(driver: WebDriver, wait: WebDriverWait, task: Task) -> None:
         if task.wait:
             wait.until(task.wait)
