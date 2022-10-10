@@ -30,10 +30,10 @@ class SimpleSpider(SeleniumSpider):
                 .add_sleep(1)
 
         page_number = int(pq.find("span[data-test-id='pagination-current-page']").text())
-        if page_number == 1: raise StopSpiderException("We reached the end")
+        if page_number == 2: raise StopSpiderException("We reached the end")
 
         yield Task(name="articles") \
-            .add_xpath("//a[@id='pagination-next-page']") \
+            .add_script("document.getElementById('pagination-next-page').click()") \
             .add_wait(lambda d: d.find_element_by_xpath("//article")) \
             .add_sleep(2)
 
