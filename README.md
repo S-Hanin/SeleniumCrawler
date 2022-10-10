@@ -13,6 +13,7 @@ all works synchronously, that's not so trendy though.
 
 Although I use this lib quite a long time it's still a homemade thing, so use it at your own risk.
 
+
 ### Using
 
 For sure the 'must have' knowledge is how selenium works, at least this knowledge will be helpful.
@@ -24,6 +25,7 @@ import types
 from pyquery import PyQuery
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.chrome.options import Options
+
 
 from spider.core import SeleniumSpider
 from spider.task import Task
@@ -39,7 +41,6 @@ class SimpleSpider(SeleniumSpider):
         .add_url("https://habr.com/ru/all/")
         .add_wait(lambda d: d.find_element_by_xpath("//div[@data-test-id='page-top']"))
 
-
     def task_articles(self, driver: WebDriver, pq: PyQuery, task: Task):
        pq.make_links_absolute("https://habr.com/ru/all/")
        for it in pq.items('article'):
@@ -51,7 +52,6 @@ if __name__ == 'main':
     options.headless = True
     worker = SimpleSpider(options=options)
     worker.run()
-
 ```
 
 `def prepare(self, driver)` - this method is executed before the process begins.  
@@ -74,7 +74,6 @@ Parameter `name` tells to spider a name of the handler for this task.
 Note that handler's name is `task_articles` and name of the task is `articles`, that's a task naming convention.
 
 It's possible to set up `Task` different ways:
-
 * use url - selenium opens specified address
 * use xpath selector - selenium finds element on the page and clicks it
 * use css selector - selenium finds element on the page and clicks it
