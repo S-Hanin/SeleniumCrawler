@@ -89,12 +89,12 @@ class BrowserTransport(BaseTransport):
                   task)
 
     def __click_by_xpath(self, task: Task) -> None:
-        element = self.driver.find_element_by_xpath(task.xpath)
-        ActionChains(self.driver).move_to_element(element).perform()
-        self._wait.until(EC.visibility_of(element))
-        element = self._wait.until(EC.element_to_be_clickable([By.XPATH, task.xpath]))
+        el = self.driver.find_element_by_xpath(task.xpath)
+        ActionChains(self.driver).move_to_element(el).perform()
+        self._wait.until(EC.visibility_of(el))
+        el = self._wait.until(EC.element_to_be_clickable([By.XPATH, task.xpath]))
         time.sleep(0.5)
-        element.click()
+        el.click()
         self.__set_last_tab_active()
 
     def __cssquery_target_handler(self, task: Task) -> None:
@@ -104,12 +104,12 @@ class BrowserTransport(BaseTransport):
                   task)
 
     def __click_by_css(self, task: Task) -> None:
-        element = self.driver.find_element_by_css_selector(task.css)
-        ActionChains(self.driver).move_to_element(element).perform()
-        self._wait.until(EC.visibility_of(element))
-        element = self._wait.until(EC.element_to_be_clickable([By.CSS_SELECTOR, task.css]))
+        el = self.driver.find_element_by_css_selector(task.css)
+        ActionChains(self.driver).move_to_element(el).perform()
+        self._wait.until(EC.visibility_of(el))
+        el = self._wait.until(EC.element_to_be_clickable([By.CSS_SELECTOR, task.css]))
         time.sleep(0.5)
-        element.click()
+        el.click()
         self.__set_last_tab_active()
 
     def __set_last_tab_active(self):
