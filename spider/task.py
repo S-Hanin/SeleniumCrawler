@@ -21,6 +21,11 @@ class Task:
         self.__dict__["_css"] = val
         return self
 
+    def add_script(self, val, args=None):
+        self.__dict__["_script"] = val
+        self.__dict__["_script_args"] = args or []
+        return self
+
     def add_wait(self, val):
         self.__dict__["_wait"] = val
         return self
@@ -48,3 +53,11 @@ class Task:
     @property
     def wait(self):
         return self.__dict__.get("_wait")
+
+    @property
+    def script(self):
+        return self.__dict__.get("_script")
+
+    @property
+    def script_args(self):
+        return self.__dict__.get("_script_args")
