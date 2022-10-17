@@ -6,6 +6,7 @@ import logging
 import types
 from typing import Type, Optional
 
+
 from pyquery import PyQuery
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
