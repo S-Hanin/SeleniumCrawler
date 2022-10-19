@@ -4,8 +4,6 @@ Common functions not related to main functionality
 """
 import logging
 
-from selenium.common.exceptions import ElementClickInterceptedException
-
 from .exceptions import StopSpiderException
 
 logger = logging.getLogger(__name__)
@@ -25,7 +23,7 @@ def retry(count, function, callback, *args, **kwargs) -> None:
         try:
             function(*args, **kwargs)
             break
-        except ElementClickInterceptedException as err:
+        except Exception as err:
             logger.warning("Attemp %s of %s failed: %s", _, count, err)
             callback()
     else:

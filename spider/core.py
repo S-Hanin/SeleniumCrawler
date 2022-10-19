@@ -61,8 +61,11 @@ class SeleniumSpider:
     def __process_cycle(self) -> None:
         try:
             for task in self.__task_providers_chain.items():
-                next_task_provider = self.__process_task(task)
-                self.__handle_next_task_provider(next_task_provider)
+                if task:
+                    next_task_provider = self.__process_task(task)
+                    self.__handle_next_task_provider(next_task_provider)
+                else:
+                    self.__transport.close_active_tab()
         except StopSpiderException as ex:
             LOGGER.info("Spider stopped on StopSpiderException: %s", ex)
         except KeyboardInterrupt as ex:
