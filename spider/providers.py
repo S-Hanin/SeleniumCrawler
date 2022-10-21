@@ -1,4 +1,5 @@
 # -*- coding: utf8 -*-
+import gc
 import typing
 from collections import deque
 from typing import Deque
@@ -8,18 +9,17 @@ class ProvidersChain:
     def __init__(self, initial_provider):
         self.__stack: Deque[typing.Generator] = deque()
         self.__stack.append(initial_provider)
-        self.__next = None
 
     def has_next(self):
-        return bool(self.__stack) or bool(self.__next)
+        return bool(self.__stack)
 
     def get_next_task(self):
         try:
             provider = self.__stack.pop()
-            task = self.__next or next(provider)
-            self.__next = next(provider, None)
-            if self.__next:
+            if task := next(provider, None):
                 self.__stack.append(provider)
+            else:
+                gc.collect()
             return task
         except IndexError as ex:
             pass

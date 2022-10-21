@@ -85,7 +85,7 @@ class BrowserTransport(BaseTransport):
     def __xpath_target_handler(self, task: Task) -> None:
         if task.xpath:
             retry(3, self.__click_by_xpath,
-                  lambda: self.driver.refresh(),
+                  self.driver.refresh,
                   task)
 
     def __click_by_xpath(self, task: Task) -> None:
@@ -100,7 +100,7 @@ class BrowserTransport(BaseTransport):
     def __cssquery_target_handler(self, task: Task) -> None:
         if task.css:
             retry(3, self.__click_by_css,
-                  lambda: self.driver.refresh(),
+                  self.driver.refresh,
                   task)
 
     def __click_by_css(self, task: Task) -> None:
@@ -111,6 +111,16 @@ class BrowserTransport(BaseTransport):
         time.sleep(0.5)
         element.click()
         self.__set_last_tab_active()
+
+    def __javascript_target_handler(self, task: Task) -> None:
+        if task.script:
+            retry(3, self.__exec_javascript,
+                  self.driver.refresh,
+                  task)
+
+    def __exec_javascript(self, task: Task) -> None:
+        self.driver.execute_script(task.script, *task.script_args)
+        self.driver.switch_to.window(self.driver.window_handles[-1])
 
     def __set_last_tab_active(self):
         last_tab = self.driver.window_handles[-1]

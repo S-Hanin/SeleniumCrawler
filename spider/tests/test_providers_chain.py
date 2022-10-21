@@ -12,6 +12,9 @@ class TestProvidersChain(TestCase):
         self.assertTrue(chain.has_next())
 
         chain.get_next_task()
+        self.assertTrue(chain.has_next())
+
+        chain.get_next_task()
         self.assertFalse(chain.has_next())
 
     def test_get_next_task(self):
@@ -50,4 +53,4 @@ class TestProvidersChain(TestCase):
         for it in chain.items():
             result.append(it)
 
-        self.assertListEqual(result, ['b', 'a'])
+        self.assertListEqual(result, ['b', None, 'a', None])
