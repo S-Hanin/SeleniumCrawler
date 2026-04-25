@@ -57,25 +57,25 @@ if __name__ == "main":
 ```
 
 `def prepare(self, driver)` - this method is executed before the process begins.  
-It gets driver object so it's possible to set up something before spider gets crawling
+It gets a driver object so it's possible to set up something before spider gets crawling
 
 `def task_generator(self)` - that's the beginning of the crawler's jorney.  
 Task generator should produce Task object(s).  
-In this example I say that I want to open "https://habr.com/ru/all/" and wait while the certain element is displayed.
+In this example I'm sayng that I want to open "https://habr.com/ru/all/" and wait until the certain element is displayed.
 
-`task_articles(self, driver: WebDriver, pq: PyQuery, task: Task)` - that's how look like all request handlers.
-After spider gets a response from browser, it calls a handler for task and passes instances of
+`task_articles(self, driver: WebDriver, pq: PyQuery, task: Task)` - that's how all request handlers look like.
+After spider gets a response from the browser, it calls a handler for the task and passes instances of
 `driver`, `pq` (which is a PyQuery object containing html) and `task` that triggered the call of this handler.
 
 ***There's a fully working example in 'examples/simple_spider.py'***
 
 #### Task
 
-`Task(name="articles")` - an object who tells the spider where it should go and what to do.
-Parameter `name` tells to spider a name of the handler for this task.  
+`Task(name="articles")` - an object that tells the spider where it should go and what to do.
+Parameter `name` tells to the spider a name of the handler for this task.  
 Note that handler's name is `task_articles` and name of the task is `articles`, that's a task naming convention.
 
-It's possible to set up `Task` different ways:
+It's possible to set up a `Task` object in different ways:
 * use url - selenium opens specified address
 * use xpath selector - selenium finds element on the page and clicks it
 * use css selector - selenium finds element on the page and clicks it
